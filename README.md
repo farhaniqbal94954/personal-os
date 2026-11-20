@@ -4,44 +4,33 @@ Private finance & personal management web app — React + Vite + TypeScript + **
 
 ---
 
-## 1 · Database (Supabase → SQL Editor → New query → Run)
+## 1 · Deploy on Vercel (easiest — no SQL, no copying keys)
+1. Push this folder to GitHub (the `.gitignore` keeps `.env.local` and `node_modules` out).
+2. Vercel → **Add New → Project** → pick the repo. Framework **Vite** is detected (build `npm run build`, output `dist`).
+3. When Vercel offers it, **connect Supabase** (Storage / Integrations → Supabase → create or link a project).
+4. Deploy. That's it:
+   - the app reads the Supabase settings the integration creates (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+     `…_ANON_KEY`, `SUPABASE_URL` … — any of them work, `VITE_…` names too);
+   - during the build, `scripts/migrate.mjs` uses `POSTGRES_URL_NON_POOLING` to **create / upgrade all tables automatically**.
+     Each migration runs once (tracked in `_personal_os_migrations`); an existing database keeps all its data.
+   - only the URL and the **public** key go into the browser; a secret/service-role key stops the build on purpose.
+5. Open the site → **Create an account** → you're in.
 
-| Situation | Run |
-|---|---|
-| **Existing project** (you already ran 001) | `supabase/migrations/002_upgrade.sql` |
-| **New project** | `001_initial_schema.sql`, then `002_upgrade.sql` |
+Afterwards (recommended, 1 minute in Supabase):
+- **Authentication → URL Configuration → Site URL** = your Vercel address (so confirmation emails link to the right site).
+- If Supabase asks you to confirm your email, click the link in the email, then sign in.
+- After creating your own account, turn sign-ups off: **Authentication → Sign In / Providers → Email → disable "Allow new users to sign up"**.
 
-`002_upgrade.sql` keeps all existing data and can safely be run twice.
-What it changes:
-- **Accounts:** the old `balance` becomes the *starting balance* on the date it was last saved. From then on the
-  balance is **calculated**: starting balance + transactions on/after that date.
-- **Transactions:** adds Transfer & Adjustment types, cross-currency transfers (`to_amount`), links to
-  project / business / investment / invoice.
-- **New tables:** `budgets`, `user_settings`. Plus new columns for reminders (repeat, amount), invoices & contracts, notes (pinned) etc.
-- Row-Level Security on every table — each login sees only its own data.
+> Connected an existing Supabase project with data? After the first deploy open **Bank Accounts → Reconcile** once per account.
 
-> After upgrading, open **Bank Accounts → Reconcile** on each account once and type the balance from your bank app.
-> The app records the difference so everything matches from day one.
-
-## 2 · Create your login
-Supabase → **Authentication → Users → Add user** (email + password). Optionally turn off public sign-ups
-(Authentication → Providers → Email → disable "Allow new users to sign up").
-
-## 3 · Run locally
+## 2 · Run locally
 ```bash
-cp .env.local.example .env.local     # fill VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (Project Settings → API)
+cp .env.local.example .env.local     # VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (Project Settings → API)
 npm install
 npm run dev                          # http://localhost:5173
 ```
-
-## 4 · Host it (Netlify or Vercel — free)
-1. Push this folder to GitHub (the `.gitignore` keeps `.env.local` private), or drag-and-drop on Netlify.
-2. **Build command:** `npm run build` · **Publish directory:** `dist`
-3. **Environment variables:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (same values as `.env.local`).
-4. Page refresh on deep links (e.g. `/accounts`) is handled by `public/_redirects` (Netlify) and `vercel.json` (Vercel).
-5. Supabase → Authentication → URL Configuration → set **Site URL** to your hosted address.
-
-Do **not** upload an old `dist/` folder — always build with your env variables set.
+Local builds skip the database step unless a `POSTGRES_URL…` variable is set. You can also run the SQL files in
+`supabase/migrations` by hand in the Supabase SQL Editor (001 then 002) — both ways give the same result.
 
 ---
 

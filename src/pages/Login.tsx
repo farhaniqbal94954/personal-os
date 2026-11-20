@@ -12,7 +12,9 @@ type LoginForm = z.infer<typeof schema>
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(schema),
@@ -21,8 +23,16 @@ export default function Login() {
   async function onSubmit(data: LoginForm) {
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.signInWithPassword(data)
-    if (error) setError(error.message)
+    setInfo(null)
+    if (mode === 'signup') {
+      const { data: res, error } = await supabase.auth.signUp({ ...data, options: { emailRedirectTo: window.location.origin } })
+      if (error) setError(error.message)
+      else if (!res.session) { setInfo('Account created. Check your email and click the confirmation link, then sign in here.'); setMode('signin') }
+      // with email confirmation off, a session is returned and the app opens immediately
+    } else {
+      const { error } = await supabase.auth.signInWithPassword(data)
+      if (error) setError(error.message === 'Email not confirmed' ? 'Please confirm your email first — check your inbox for the link from Supabase.' : error.message)
+    }
     setLoading(false)
   }
 
@@ -45,7 +55,7 @@ export default function Login() {
         {/* Card */}
         <div className="card p-7 shadow-xl shadow-slate-200/60 dark:shadow-black/30">
           <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-6">
-            Sign in to your account
+            {mode === 'signin' ? 'Sign in to your account' : 'Create your account'}
           </h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
@@ -69,12 +79,18 @@ export default function Login() {
                 type="password"
                 className="input"
                 placeholder="••••••••"
-                autoComplete="current-password"
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
               />
               {errors.password && (
                 <p className="text-xs text-red-500 mt-1.5">{errors.password.message}</p>
               )}
             </div>
+
+            {info && (
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-sm rounded-xl px-4 py-3" data-testid="login-info">
+                {info}
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm rounded-xl px-4 py-3">
@@ -90,11 +106,17 @@ export default function Login() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Signing in…
+                  {mode === 'signin' ? 'Signing in…' : 'Creating account…'}
                 </span>
-              ) : 'Sign in'}
+              ) : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-5">
+            {mode === 'signin' ? 'First time here? ' : 'Already have an account? '}
+            <button type="button" className="font-bold text-indigo-600 hover:underline" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setInfo(null) }}>
+              {mode === 'signin' ? 'Create an account' : 'Sign in'}
+            </button>
+          </p>
         </div>
 
         <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-5">
