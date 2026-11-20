@@ -19,7 +19,17 @@ export default function Reminders() {
         <Kpi label="Due in 7 days" value={money(sum(rs.filter((r) => daysUntil(r.due_date) <= 7), (r) => r.amount || 0))} foot="Amount to pay" />
         <Kpi label="Recurring bills / month" value={money(monthly)} foot="Average of repeating bills" />
       </div>
-      <div className="card overflow-x-auto mb-5">
+      <div className="card mb-5 md:hidden">
+        {rs.length === 0 ? <Empty action={<button className="btn-primary btn-sm" onClick={() => reminderForm(d, db, ws)}>+ Add reminder</button>}>No upcoming reminders.</Empty> : rs.map((r) => (
+          <div key={r.id} className="m-row">
+            <div className="flex justify-between gap-3">
+              <div className="min-w-0"><div className="font-semibold">{r.name}</div><div className="text-xs text-slate-400">{formatDate(r.due_date)} · {r.repeat === 'none' ? 'one-time' : r.repeat}{r.detail ? ' · ' + r.detail : ''}</div></div>
+              <div className="text-right shrink-0">{r.amount ? <div className="font-bold">{money(r.amount)}</div> : null}<DueBadge date={r.due_date} /></div>
+            </div>
+            <div className="m-actions">{r.amount ? <button className="btn-primary btn-sm !text-white" onClick={() => payReminderForm(d, db, r)}>Pay</button> : null}<button onClick={() => completeReminder(db, r).catch((e) => toast(e.message, 'err'))}>{r.repeat !== 'none' ? 'Skip / done' : 'Done'}</button><button onClick={() => reminderForm(d, db, ws, r)}>Edit</button><button className="!text-red-500" onClick={() => del(r.id)}>Delete</button></div>
+          </div>))}
+      </div>
+      <div className="card overflow-x-auto mb-5 hidden md:block">
         <table className="w-full">
           <thead><tr>{['Reminder', 'Due', 'Repeats', 'Amount', 'Status', ''].map((h, i) => <th key={i} className={`table-th ${i === 3 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
           <tbody>

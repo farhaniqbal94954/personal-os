@@ -64,7 +64,10 @@ async function loadAll(): Promise<AppData> {
   const results = await Promise.all(TABLES.map(fetchAll))
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const d: any = {}
-  TABLES.forEach((t, i) => (d[t] = results[i]))
+  // stable, predictable order: oldest first (your first account is the default everywhere)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const byCreated = (a: any, b: any) => String(a.created_at || '').localeCompare(String(b.created_at || '')) || String(a.id).localeCompare(String(b.id))
+  TABLES.forEach((t, i) => (d[t] = results[i].sort(byCreated)))
   const { data: s, error } = await supabase.from('user_settings').select('*').maybeSingle()
   if (error) throw new Error(`user_settings: ${error.message} — did you run supabase/migrations/002_upgrade.sql?`)
   const def = defaultSettings(await userId())

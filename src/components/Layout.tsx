@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { clearUserCache, useData } from '../lib/data'
+import { clearUserCache, useData, useDb } from '../lib/data'
+import { txnForm } from '../lib/forms'
 import { useAppStore, useToast } from '../store/useAppStore'
 import { FormHost } from './FormModal'
 import { daysUntil } from '../lib/formatters'
@@ -18,7 +19,7 @@ const NAV = [
 function Toaster() {
   const { msg, kind } = useToast()
   if (!msg) return null
-  return <div data-testid="toast" className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 rounded-xl shadow-xl text-sm font-semibold max-w-[90vw] ${kind === 'err' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'}`}>{msg}</div>
+  return <div data-testid="toast" className={`fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 rounded-xl shadow-xl text-sm font-semibold max-w-[90vw] ${kind === 'err' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'}`}>{msg}</div>
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { country, setCountry, theme, toggleTheme } = useAppStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { data, isLoading, error, refetch } = useData()
+  const db = useDb()
+  const loc = useLocation()
+  useEffect(() => { setMobileOpen(false); window.scrollTo(0, 0) }, [loc.pathname])
 
   useEffect(() => { document.documentElement.classList.toggle('dark', theme === 'dark') }, [theme])
 
@@ -37,12 +41,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   } : {}
 
   const Sidebar = (
-    <aside className="flex flex-col h-full w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/80">
-      <div className="flex items-center gap-3 px-5 pt-6 pb-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+    <aside className="flex flex-col h-full w-64 lg:w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/80">
+      <div className="flex items-center gap-3 px-5 pt-5 pb-4 lg:pt-6 lg:pb-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-400 flex items-center justify-center text-white font-black text-lg select-none shadow-md">P</div>
         <div><div className="text-base font-black tracking-tight leading-tight">Personal OS</div><div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Control centre</div></div>
       </div>
-      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+      <div className="hidden lg:block px-4 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
         <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
           {(['UAE', 'INDIA'] as const).map((c) => (
             <button key={c} data-testid={`ws-${c}`} onClick={() => setCountry(c)} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${country === c ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>{c === 'UAE' ? '🇦🇪 UAE' : '🇮🇳 India'}</button>
@@ -73,15 +77,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
       <div className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60">{Sidebar}</div>
-      {mobileOpen && <><div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileOpen(false)} /><div className="fixed inset-y-0 left-0 z-50 w-60 lg:hidden">{Sidebar}</div></>}
+      {mobileOpen && <><div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileOpen(false)} /><div className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden shadow-2xl" style={{ paddingTop: 'env(safe-area-inset-top)' }}>{Sidebar}</div></>}
       <div className="flex-1 lg:pl-60 flex flex-col min-h-screen min-w-0">
-        <header className="sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/80 px-5 py-3 flex items-center gap-4 print:hidden">
-          <button className="lg:hidden btn btn-sm p-2" onClick={() => setMobileOpen(true)} aria-label="Open menu">☰</button>
+        <header className="sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/80 px-4 sm:px-5 py-2.5 sm:py-3 flex items-center gap-3 print:hidden" style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}>
+          <div className="lg:hidden flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-400 flex items-center justify-center text-white font-black select-none shrink-0">P</div>
+            <span className="font-black tracking-tight truncate">Personal OS</span>
+          </div>
           <div className="flex-1" />
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{country === 'UAE' ? '🇦🇪 UAE · AED' : '🇮🇳 India · INR'}</span>
-          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-black text-sm select-none">F</div>
+          {/* workspace switch — always visible on phones */}
+          <div className="lg:hidden flex gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
+            {(['UAE', 'INDIA'] as const).map((c) => (
+              <button key={c} data-testid={`mws-${c}`} onClick={() => setCountry(c)} className={`px-2.5 py-1 rounded-md text-xs font-bold ${country === c ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>{c === 'UAE' ? '🇦🇪 AED' : '🇮🇳 INR'}</button>
+            ))}
+          </div>
+          <span className="hidden lg:inline text-xs font-bold text-slate-400 uppercase tracking-widest">{country === 'UAE' ? '🇦🇪 UAE · AED' : '🇮🇳 India · INR'}</span>
+          <div className="hidden lg:flex w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 items-center justify-center text-indigo-700 dark:text-indigo-300 font-black text-sm select-none">F</div>
         </header>
-        <main className="flex-1 p-4 sm:p-5 lg:p-8 max-w-[1500px] w-full mx-auto">
+        <main className="flex-1 px-4 pt-4 pb-28 sm:px-5 sm:pt-5 lg:p-8 max-w-[1500px] w-full mx-auto min-w-0">
           {isLoading ? <div className="flex items-center justify-center h-64"><div className="w-7 h-7 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" /></div>
             : error ? (
               <div className="card p-6 max-w-2xl mx-auto mt-10" data-testid="load-error">
@@ -93,6 +106,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             ) : children}
         </main>
       </div>
+      {/* phone bottom bar */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 pb-safe print:hidden" data-testid="bottom-nav">
+        <div className="grid grid-cols-5 items-end h-16">
+          {[{ to: '/', label: 'Home', icon: '⊞' }, { to: '/accounts', label: 'Accounts', icon: '🏦' }].map((n) => (
+            <NavLink key={n.to} to={n.to} end className={({ isActive }) => `flex flex-col items-center justify-center h-full text-[10px] font-bold gap-0.5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}><span className="text-lg leading-none">{n.icon}</span>{n.label}</NavLink>
+          ))}
+          <div className="flex justify-center">
+            <button aria-label="Add transaction" data-testid="fab-add" disabled={!data} onClick={() => data && txnForm(data, db, country)}
+              className="-mt-6 w-14 h-14 rounded-full bg-indigo-600 text-white text-3xl leading-none shadow-lg shadow-indigo-600/40 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50">+</button>
+          </div>
+          <NavLink to="/transactions" className={({ isActive }) => `flex flex-col items-center justify-center h-full text-[10px] font-bold gap-0.5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}><span className="text-lg leading-none">↕</span>Activity</NavLink>
+          <button onClick={() => setMobileOpen(true)} aria-label="Open menu" className={`flex flex-col items-center justify-center h-full text-[10px] font-bold gap-0.5 ${mobileOpen ? 'text-indigo-600' : 'text-slate-400'}`}><span className="relative text-lg leading-none">☰{(counts.tasks || counts.reminders) ? <span className="absolute -top-0.5 -right-1.5 w-2 h-2 rounded-full bg-red-500" /> : null}</span>More</button>
+        </div>
+      </nav>
       <FormHost />
       <Toaster />
     </div>

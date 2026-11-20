@@ -17,14 +17,25 @@ export default function Budgets() {
   return (
     <div>
       <PageHeader title="Budgets" subtitle="Monthly limits per category — spending is tracked automatically from your expenses." action={<button className="btn-primary" onClick={() => budgetForm(d, db, ws)}>+ Add budget</button>} />
-      <div className="flex gap-2 mb-5">{[-2, -1, 0].map((i) => { const x = monthAdd(thisMonth(), i); return <button key={x} onClick={() => setMk(x)} className={`btn btn-sm ${x === mk ? '!bg-indigo-50 !text-indigo-700 dark:!bg-indigo-900/30 dark:!text-indigo-300' : ''}`}>{monthLabel(x)}</button> })}</div>
+      <div className="flex flex-wrap gap-2 mb-5">{[-2, -1, 0].map((i) => { const x = monthAdd(thisMonth(), i); return <button key={x} onClick={() => setMk(x)} className={`btn btn-sm ${x === mk ? '!bg-indigo-50 !text-indigo-700 dark:!bg-indigo-900/30 dark:!text-indigo-300' : ''}`}>{monthLabel(x)}</button> })}</div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <Kpi label="Budgeted" value={money(tl)} foot={`${bs.length} categories`} />
         <Kpi label="Spent (budgeted)" value={money(ts)} foot={`${pct(ts, tl)}% used`} tone={ts > tl ? 'neg' : undefined} />
         <Kpi label="Remaining" value={money(tl - ts)} foot={now ? `${dim - dom} days left · ${money(Math.max(0, (tl - ts) / Math.max(1, dim - dom + 1)))}/day` : ''} tone={tl - ts < 0 ? 'neg' : 'pos'} />
         <Kpi label="Unbudgeted spend" value={money(sum(unb, (x) => x[1]))} foot={`${unb.length} categories without a budget`} />
       </div>
-      <div className="card overflow-x-auto">
+      <div className="card md:hidden">
+        {bs.length === 0 && <Empty action={<button className="btn-primary btn-sm" onClick={() => budgetForm(d, db, ws)}>+ Add budget</button>}>Set a monthly limit per expense category.</Empty>}
+        {bs.map((b) => { const sp = cats[b.category] || 0; const pace = now ? sp / ((b.monthly_limit * dom) / dim) : sp / b.monthly_limit; return (
+          <div key={b.id} className="m-row">
+            <div className="flex justify-between items-center gap-2 mb-1.5"><span className="font-semibold">{b.category}</span>{pace > 1.1 ? <span className="badge-red">Too fast</span> : pace > 0.9 ? <span className="badge-amber">On edge</span> : <span className="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">OK</span>}</div>
+            <Progress value={sp} max={b.monthly_limit} />
+            <div className="flex justify-between text-xs mt-1.5"><span>{money(sp)} <span className="text-slate-400">of {money(b.monthly_limit)}</span></span><span className={b.monthly_limit - sp < 0 ? 'text-red-500 font-bold' : 'text-slate-500'}>{money(b.monthly_limit - sp)} left</span></div>
+            <div className="m-actions"><button onClick={() => budgetForm(d, db, ws, b)}>Edit</button><button className="!text-red-500" onClick={async () => { if (confirm('Delete this budget?')) { await db.remove('budgets', b.id); toast('Deleted') } }}>Delete</button></div>
+          </div>) })}
+        {unb.map(([c, v]) => <div key={c} className="m-row flex justify-between text-sm text-slate-400"><span>{c} <span className="badge-slate">no budget</span></span><span>{money(v)}</span></div>)}
+      </div>
+      <div className="card overflow-x-auto hidden md:block">
         <table className="w-full">
           <thead><tr>{['Category', 'Progress', 'Spent', 'Limit', 'Left', 'Pace', ''].map((h, i) => <th key={i} className={`table-th ${i >= 2 && i <= 5 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
           <tbody>

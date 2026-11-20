@@ -44,7 +44,7 @@ export default function Dashboard() {
         <Kpi label={`Income · ${monthShort(m)}`} value={money(inc)} foot={chg(inc, last.inc)} tone="pos" icon="↗️" />
         <Kpi label={`Expenses · ${monthShort(m)}`} value={money(exp)} foot={chg(exp, last.exp, true)} tone="neg" icon="↘️" />
         <Kpi label="Investments" value={money(inv)} foot={invCost ? <span className={inv >= invCost ? 'text-emerald-600' : 'text-red-500'}>{inv >= invCost ? '+' : ''}{pct(inv - invCost, invCost)}% return</span> : `${d.holdings.filter((h) => h.country === ws).length} holdings`} icon="📈" />
-        <Kpi label="Net worth" value={money(nw)} foot={combined !== null ? `Both countries ≈ ${money(combined)}` : 'Bank + investments'} icon="💎" />
+        <div className="col-span-2 lg:col-span-1"><Kpi label="Net worth" value={money(nw)} foot={combined !== null ? `Both countries ≈ ${money(combined)}` : 'Bank + investments'} icon="💎" /></div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 mb-4">
@@ -64,7 +64,7 @@ export default function Dashboard() {
         </div>
         <div className="card p-5 xl:col-span-2">
           <CardHead title={<>💡 Suggestions <span className="badge-slate ml-1">{sg.length}</span></>} />
-          <div className="max-h-[260px] overflow-y-auto pr-1" data-testid="suggestions">
+          <div className="xl:max-h-[260px] xl:overflow-y-auto pr-1" data-testid="suggestions">
             {sg.length === 0 ? <Empty>All good — nothing needs attention 🎉</Empty> : sg.map((s, i) => (
               <div key={i} className={`flex gap-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0 ${s.to ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30 -mx-2 px-2 rounded-lg' : ''}`} onClick={() => s.to && nav(s.to)}>
                 <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${s.lvl === 'red' ? 'bg-red-500' : s.lvl === 'amber' ? 'bg-amber-500' : s.lvl === 'green' ? 'bg-emerald-500' : 'bg-blue-500'}`} />

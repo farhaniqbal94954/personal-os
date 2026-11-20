@@ -29,8 +29,8 @@ export default function BusinessDetail() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div className="flex items-center gap-3"><Link to="/business" className="btn btn-sm">← All</Link>
-          <div><h1 className="text-2xl font-black">{b.name}</h1><p className="text-xs text-slate-400">{b.type}{b.licence ? ` · Licence ${b.licence}` : ''}{b.licence_expiry ? ` · expires ${formatDate(b.licence_expiry)}` : ''}</p></div></div>
+        <div className="flex items-center gap-3 min-w-0"><Link to="/business" className="btn btn-sm shrink-0">← All</Link>
+          <div className="min-w-0"><h1 className="text-xl sm:text-2xl font-black truncate">{b.name}</h1><p className="text-xs text-slate-400">{b.type}{b.licence ? ` · Licence ${b.licence}` : ''}{b.licence_expiry ? ` · expires ${formatDate(b.licence_expiry)}` : ''}</p></div></div>
         <div className="flex gap-2"><button className="btn" onClick={() => businessForm(db, ws, b)}>Edit</button><button className="btn-danger" onClick={async () => { if (await deleteBusiness(db, b)) nav('/business') }}>Delete</button></div>
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
@@ -38,7 +38,7 @@ export default function BusinessDetail() {
         <Kpi label="Expenses (all time)" value={money(s.exp)} foot={`YTD ${money(s.ytdE)}`} tone="neg" />
         <Kpi label="Profit" value={money(s.rev - s.exp)} foot={s.rev ? `Margin ${pct(s.rev - s.exp, s.rev)}%` : ''} tone={s.rev - s.exp >= 0 ? 'pos' : 'neg'} />
         <Kpi label="Receivables" value={money(s.recv)} foot={`${invs.filter((i) => i.status !== 'Paid').length} unpaid invoices`} />
-        <Kpi label="Contract value / yr" value={money(s.annual)} foot={`${s.contracts.length} active`} />
+        <div className="col-span-2 xl:col-span-1"><Kpi label="Contract value / yr" value={money(s.annual)} foot={`${s.contracts.length} active`} /></div>
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 mb-5">
         <div className="card p-5 xl:col-span-3">
@@ -65,7 +65,15 @@ export default function BusinessDetail() {
       </div>
       <div className="card mb-5">
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between"><h3 className="text-sm font-bold">Invoices</h3><button className="btn-primary btn-sm" onClick={() => invoiceForm(db, b)}>+ Invoice</button></div>
-        <div className="overflow-x-auto"><table className="w-full">
+        <div className="md:hidden">{invs.length === 0 ? <Empty>No invoices.</Empty> : invs.map((i) => (
+          <div key={i.id} className="m-row">
+            <div className="flex justify-between gap-3">
+              <div className="min-w-0"><div className="font-semibold truncate">{i.client || i.label}{i.number ? <span className="text-slate-400 font-normal"> · {i.number}</span> : null}</div><div className="text-xs text-slate-400">Issued {formatDate(i.date)} · due {formatDate(i.due_date)}</div></div>
+              <div className="text-right shrink-0"><div className="font-bold">{money(i.value)}</div>{i.status === 'Paid' ? <span className="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Paid</span> : i.due_date && daysUntil(i.due_date) < 0 ? <span className="badge-red">Overdue</span> : <span className="badge-amber">Unpaid</span>}</div>
+            </div>
+            <div className="m-actions">{i.status !== 'Paid' && <button className="btn-primary btn-sm !text-white" onClick={() => collectForm(d, db, i)}>Mark paid</button>}<button onClick={() => invoiceForm(db, b, i)}>Edit</button><button className="!text-red-500" onClick={() => delItem(i)}>Delete</button></div>
+          </div>))}</div>
+        <div className="hidden md:block overflow-x-auto"><table className="w-full">
           <thead><tr>{['No.', 'Client', 'Issued', 'Due', 'Amount', 'Status', ''].map((h, i) => <th key={i} className={`table-th ${i === 4 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
           <tbody>{invs.length === 0 ? <tr><td colSpan={7}><Empty>No invoices.</Empty></td></tr> : invs.map((i) => (
             <tr key={i.id} className="table-row">
@@ -79,8 +87,8 @@ export default function BusinessDetail() {
         </table></div>
       </div>
       {manual.length > 0 && <div className="card mb-5 p-5"><h3 className="text-sm font-bold mb-2">Manual entries <span className="text-xs font-normal text-slate-400">(not linked to a bank account)</span></h3>{manual.map((i) => (
-        <div key={i.id} className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 text-sm">
-          <span>{formatDate(i.date)} · {i.label}</span>
+        <div key={i.id} className="flex flex-wrap justify-between items-center gap-2 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 text-sm">
+          <span className="min-w-0">{formatDate(i.date)} · {i.label}</span>
           <span className="flex items-center gap-3"><b className={i.category === 'Revenue' ? 'text-emerald-600' : 'text-red-500'}>{i.category === 'Revenue' ? '+' : '−'}{money(i.value)}</b><button className="text-xs text-slate-400 hover:text-indigo-600" onClick={() => manualEntryForm(db, b, i)}>Edit</button><button className="text-xs text-slate-400 hover:text-red-500" onClick={() => delItem(i)}>Delete</button></span>
         </div>))}</div>}
       <div className="card"><div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700"><h3 className="text-sm font-bold">Bank transactions for this business</h3></div>

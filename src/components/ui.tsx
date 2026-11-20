@@ -61,8 +61,34 @@ export function Amount({ d, t, ws }: { d: AppData; t: Transaction; ws: string })
 export function TxnTable({ list, empty }: { list: Transaction[]; empty?: ReactNode }) {
   const { d, db, ws } = usePage()
   const hold = (id: string | null) => d.holdings.find((h) => h.id === id)?.name || 'Investment'
+  const accText = (t: Transaction) => t.type === 'Transfer' ? `${t.account_id ? accLabel(d, t.account_id) : hold(t.holding_id)} → ${t.to_account_id ? accLabel(d, t.to_account_id) : hold(t.holding_id)}` : accLabel(d, t.account_id)
   return (
-    <div className="overflow-x-auto">
+    <>
+    {/* phones: stacked cards */}
+    <div className="md:hidden" data-testid="txn-cards">
+      {list.length === 0 ? <Empty>{empty || 'No transactions.'}</Empty> : list.map((t) => {
+        const proj = d.projects.find((p) => p.id === t.project_id); const biz = d.businesses.find((b) => b.id === t.business_id)
+        return (
+          <div key={t.id} className="m-row" data-testid="txn-card">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{t.description || t.category || t.type}</div>
+                <div className="text-xs text-slate-400 mt-0.5">{formatDate(t.date)} · {t.type === 'Transfer' ? 'Transfer' : t.type === 'Adjustment' ? 'Adjustment' : t.category}</div>
+                <div className="text-[11px] text-slate-400 truncate">{accText(t)}</div>
+              </div>
+              <div className="text-right shrink-0"><Amount d={d} t={t} ws={ws} /></div>
+            </div>
+            {(proj || biz || beforeStart(d, t)) && <div className="flex flex-wrap gap-1 mt-1.5">
+              {proj && <span className="badge-slate">📋 {proj.name}</span>}
+              {biz && <span className="badge-slate">🏢 {biz.name}</span>}
+              {beforeStart(d, t) && <span className="badge-amber">not in balance</span>}
+            </div>}
+            <div className="m-actions"><button onClick={() => txnForm(d, db, ws, t)}>✏️ Edit</button><button className="!text-red-500" onClick={() => deleteTxn(d, db, t)}>🗑 Delete</button></div>
+          </div>)
+      })}
+    </div>
+    {/* tablets & desktop: table */}
+    <div className="hidden md:block overflow-x-auto">
       <table className="w-full">
         <thead><tr><th className="table-th">Date</th><th className="table-th">Description</th><th className="table-th">Category</th><th className="table-th">Account</th><th className="table-th text-right">Amount</th><th className="table-th"></th></tr></thead>
         <tbody>
@@ -80,7 +106,7 @@ export function TxnTable({ list, empty }: { list: Transaction[]; empty?: ReactNo
                   </div>
                 </td>
                 <td className="table-td text-slate-500 dark:text-slate-400">{t.type === 'Transfer' ? <span className="badge-indigo">Transfer</span> : t.type === 'Adjustment' ? <span className="badge-amber">Adjustment</span> : t.category}</td>
-                <td className="table-td text-xs text-slate-500 dark:text-slate-400">{t.type === 'Transfer' ? `${t.account_id ? accLabel(d, t.account_id) : hold(t.holding_id)} → ${t.to_account_id ? accLabel(d, t.to_account_id) : hold(t.holding_id)}` : accLabel(d, t.account_id)}</td>
+                <td className="table-td text-xs text-slate-500 dark:text-slate-400">{accText(t)}</td>
                 <td className="table-td text-right"><Amount d={d} t={t} ws={ws} /></td>
                 <td className="table-td text-right whitespace-nowrap">
                   <button className="text-xs text-slate-400 hover:text-indigo-600 mr-3" onClick={() => txnForm(d, db, ws, t)}>Edit</button>
@@ -92,6 +118,7 @@ export function TxnTable({ list, empty }: { list: Transaction[]; empty?: ReactNo
         </tbody>
       </table>
     </div>
+    </>
   )
 }
 

@@ -33,7 +33,7 @@ export default function Reports() {
   return (
     <div>
       <PageHeader title="Reports" subtitle="Monthly summaries and breakdowns." action={<div className="flex gap-2"><button className="btn" onClick={() => download(`report-${ws}-${p}.csv`, toCSV(txCsvRows(d, [...tx].sort(sortTx))))}>Export CSV</button><button className="btn" onClick={() => window.print()}>Print / PDF</button></div>} />
-      <div className="flex flex-wrap gap-2 mb-5">{PERIODS.map(([k, l]) => <button key={k} onClick={() => setP(k)} className={`btn btn-sm ${p === k ? '!bg-indigo-50 !text-indigo-700 dark:!bg-indigo-900/30 dark:!text-indigo-300' : ''}`}>{l}</button>)}</div>
+      <div className="flex gap-2 mb-5 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap pb-1">{PERIODS.map(([k, l]) => <button key={k} onClick={() => setP(k)} className={`btn btn-sm shrink-0 ${p === k ? '!bg-indigo-50 !text-indigo-700 dark:!bg-indigo-900/30 dark:!text-indigo-300' : ''}`}>{l}</button>)}</div>
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
         <Kpi label="Income" value={money(inc)} foot={label} tone="pos" />
         <Kpi label="Expenses" value={money(exp)} foot={label} tone="neg" />
@@ -57,7 +57,15 @@ export default function Reports() {
         <div className="card p-5"><h3 className="text-sm font-bold mb-3">Expenses by category</h3><Donut data={ec} /></div>
         <div className="card p-5"><h3 className="text-sm font-bold mb-3">Income by source</h3><Donut data={ic} /></div>
       </div>
-      <div className="card overflow-x-auto">
+      <div className="card md:hidden">
+        {[...rows].reverse().map((r) => (
+          <div key={r.mk} className="m-row">
+            <div className="flex justify-between"><b className="text-sm">{monthLabel(r.mk)}</b><b className={`text-sm ${r.net >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{money(r.net)}</b></div>
+            <div className="flex justify-between text-xs mt-1"><span className="text-income">In {money(r.inc)}</span><span className="text-expense">Out {money(r.exp)}</span><span className="text-slate-400">{r.inc ? pct(r.net, r.inc) + '% saved' : '—'}</span></div>
+          </div>))}
+        <div className="m-row flex justify-between font-black text-sm"><span>Total</span><span>{money(inc - exp)}</span></div>
+      </div>
+      <div className="card overflow-x-auto hidden md:block">
         <table className="w-full">
           <thead><tr>{['Month', 'Income', 'Expenses', 'Net', 'Savings rate', 'Bank balance at month-end'].map((h, i) => <th key={i} className={`table-th ${i ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
           <tbody>

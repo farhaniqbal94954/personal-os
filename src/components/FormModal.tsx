@@ -126,9 +126,9 @@ function FormBody({ spec, onClose }: { spec: FormSpec; onClose: () => void }) {
           })}
         </div>
         {err && <p className="text-xs text-red-500 font-semibold break-words" data-testid="form-error">{err}</p>}
-        <div className="flex justify-end gap-3 pt-1">
-          <button type="button" className="btn" onClick={onClose}>Cancel</button>
-          <button type="submit" disabled={busy} className="btn-primary" data-testid="form-submit">{busy ? 'Saving…' : spec.submitLabel || 'Save'}</button>
+        <div className="grid grid-cols-2 sm:flex sm:justify-end gap-3 pt-1 sticky bottom-0 bg-white dark:bg-slate-800 -mx-5 px-5 sm:mx-0 sm:px-0 pb-1">
+          <button type="button" className="btn justify-center" onClick={onClose}>Cancel</button>
+          <button type="submit" disabled={busy} className="btn-primary justify-center" data-testid="form-submit">{busy ? 'Saving…' : spec.submitLabel || 'Save'}</button>
         </div>
       </form>
     </Modal>

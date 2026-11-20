@@ -22,7 +22,18 @@ export default function Investments() {
         <Kpi label="Gain / loss" value={(g >= 0 ? '+' : '') + money(g)} foot={iv ? `${pct(g, iv)}% overall` : '—'} tone={g >= 0 ? 'pos' : 'neg'} icon="📊" />
         <Kpi label="Best performer" value={best ? best.name : '—'} foot={best ? `+${pct(best.current_value - best.invested, best.invested)}%` : ''} icon="🏆" />
       </div>
-      <div className="card mb-5 overflow-x-auto">
+      <div className="card mb-5 md:hidden">
+        {hs.length === 0 ? <Empty action={<button className="btn-primary btn-sm" onClick={() => holdingForm(db, ws)}>+ Add investment</button>}>No investments yet.</Empty> : hs.map((h) => { const gg = r2(h.current_value - h.invested); return (
+          <div key={h.id} className="m-row">
+            <div className="flex justify-between gap-3">
+              <div className="min-w-0"><div className="font-semibold truncate">{h.name}</div><div className="text-xs text-slate-400">{h.type} · {pct(h.current_value, cv)}% of portfolio{h.units ? ` · ${h.units} units` : ''}</div></div>
+              <div className="text-right shrink-0"><div className="font-black">{money(h.current_value)}</div><div className={`text-xs ${gg >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{gg >= 0 ? '+' : ''}{money(gg)}{h.invested ? ` (${pct(gg, h.invested)}%)` : ''}</div></div>
+            </div>
+            <div className={`text-[11px] mt-1 ${daysUntil(h.updated_on) < -30 ? 'text-amber-500' : 'text-slate-400'}`}>Invested {money(h.invested)} · updated {formatDate(h.updated_on)}</div>
+            <div className="m-actions"><button className="!text-indigo-600" onClick={() => holdValueForm(db, h)}>Update value</button><button onClick={() => investMoveForm(d, db, h, 'buy')}>Buy</button><button onClick={() => investMoveForm(d, db, h, 'sell')}>Sell</button><button onClick={() => holdingForm(db, ws, h)}>Edit</button><button className="!text-red-500" onClick={() => deleteHolding(db, h)}>Delete</button></div>
+          </div>) })}
+      </div>
+      <div className="card mb-5 overflow-x-auto hidden md:block">
         <table className="w-full">
           <thead><tr>{['Name', 'Type', 'Invested', 'Value', 'Gain', 'Weight', 'Updated', ''].map((h, i) => <th key={i} className={`table-th ${i >= 2 && i <= 5 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
           <tbody>

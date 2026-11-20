@@ -84,12 +84,12 @@ export default function Transactions() {
         <Kpi label="Entries" value={String(list.length)} foot={month ? monthLabel(month) : 'All time'} />
       </div>
       <div className="card">
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center gap-2">
-          <input value={q} onChange={(e) => setQ(e.target.value)} className="input text-sm max-w-[220px]" placeholder="Search…" />
-          <select value={month} onChange={(e) => setMonth(e.target.value)} className="input text-sm w-36"><option value="">All months</option>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select>
-          <select value={type} onChange={(e) => setType(e.target.value)} className="input text-sm w-36">{['all', 'Income', 'Expense', 'Transfer', 'Adjustment'].map((x) => <option key={x} value={x}>{x === 'all' ? 'All types' : x}</option>)}</select>
-          <select value={accParam} onChange={(e) => { const v = e.target.value; setParams(v ? { account: v } : {}) }} className="input text-sm w-52"><option value="">All accounts</option>{d.accounts.filter((a) => a.country === ws).map((a) => <option key={a.id} value={a.id}>{a.bank} · {a.name}</option>)}</select>
-          <select value={cat} onChange={(e) => setCat(e.target.value)} className="input text-sm w-44"><option value="">All categories</option>{cats.map((c) => <option key={c}>{c}</option>)}</select>
+        <div className="px-4 sm:px-5 py-4 border-b border-slate-100 dark:border-slate-700 grid grid-cols-2 md:flex md:flex-wrap items-center gap-2">
+          <input value={q} onChange={(e) => setQ(e.target.value)} className="input text-sm col-span-2 md:max-w-[220px]" placeholder="Search…" />
+          <select value={month} onChange={(e) => setMonth(e.target.value)} className="input text-sm md:w-36"><option value="">All months</option>{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</select>
+          <select value={type} onChange={(e) => setType(e.target.value)} className="input text-sm md:w-36">{['all', 'Income', 'Expense', 'Transfer', 'Adjustment'].map((x) => <option key={x} value={x}>{x === 'all' ? 'All types' : x}</option>)}</select>
+          <select value={accParam} onChange={(e) => { const v = e.target.value; setParams(v ? { account: v } : {}) }} className="input text-sm md:w-52"><option value="">All accounts</option>{d.accounts.filter((a) => a.country === ws).map((a) => <option key={a.id} value={a.id}>{a.bank} · {a.name}</option>)}</select>
+          <select value={cat} onChange={(e) => setCat(e.target.value)} className="input text-sm md:w-44"><option value="">All categories</option>{cats.map((c) => <option key={c}>{c}</option>)}</select>
         </div>
         <TxnTable list={list.slice(0, limit)} empty={all.length ? 'No transactions match these filters.' : 'No transactions yet.'} />
         {list.length > limit && <div className="p-4 text-center"><button className="btn" onClick={() => setLimit(limit + 300)}>Show more ({list.length - limit} left)</button></div>}

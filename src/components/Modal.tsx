@@ -27,7 +27,7 @@ export default function Modal({ open, onClose, title, children, wide }: ModalPro
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       {/* Backdrop */}
@@ -38,11 +38,11 @@ export default function Modal({ open, onClose, title, children, wide }: ModalPro
       {/* Panel */}
       <div
         ref={ref}
-        className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full ${wide ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] flex flex-col`}
+        className={`relative bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'} max-h-[92dvh] sm:max-h-[90vh] flex flex-col pb-safe`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">{title}</h3>
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white pr-3 truncate">{title}</h3>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm font-bold"
@@ -51,7 +51,7 @@ export default function Modal({ open, onClose, title, children, wide }: ModalPro
           </button>
         </div>
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5">
           {children}
         </div>
       </div>

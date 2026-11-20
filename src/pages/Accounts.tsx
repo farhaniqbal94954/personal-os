@@ -37,12 +37,26 @@ export default function Accounts() {
       </div>
 
       <div className="card mb-5">
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center gap-3">
+        <div className="px-4 sm:px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center gap-3">
           <h3 className="text-sm font-bold flex-1">My bank accounts</h3>
           <label className="text-xs text-slate-500 flex items-center gap-1.5"><input type="checkbox" checked={showArch} onChange={(e) => setShowArch(e.target.checked)} /> Show archived</label>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} className="input max-w-xs text-sm" placeholder="Search accounts…" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} className="input sm:max-w-xs text-sm" placeholder="Search accounts…" />
         </div>
-        <div className="overflow-x-auto">
+        <div className="md:hidden">
+          {list.length === 0 ? <Empty action={<button className="btn-primary btn-sm" onClick={() => accountForm(d, db, ws)}>+ Add account</button>}>{search ? 'No accounts match.' : 'No accounts yet in this workspace.'}</Empty> : list.map((a) => {
+            const b = accBalance(d, a) ?? 0; const mv = monthMove(a.id, a.opening_date)
+            return (
+              <div key={a.id} className={`m-row ${a.archived ? 'opacity-50' : ''}`} data-testid="acc-card">
+                <div className="flex justify-between gap-3">
+                  <div className="min-w-0"><div className="font-semibold truncate">{a.bank}</div><div className="text-xs text-slate-400 truncate">{a.name} · {a.type}{a.last4 ? ' · ••' + a.last4 : ''}{a.archived ? ' · archived' : ''}</div></div>
+                  <div className="text-right shrink-0"><div className={`font-black ${b < 0 ? 'text-red-500' : ''}`}>{money(b)}</div>{mv ? <div className={`text-xs ${mv > 0 ? 'text-income' : 'text-expense'}`}>{mv > 0 ? '+' : ''}{money(mv)} this month</div> : null}</div>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">Start {formatDate(a.opening_date)} · {money(a.opening_balance)} · checked {a.last_reconciled ? formatDate(a.last_reconciled) : 'never'}</div>
+                <div className="m-actions"><button className="!text-indigo-600" onClick={() => reconcileForm(d, db, a)}>Reconcile</button><button onClick={() => nav(`/transactions?account=${a.id}`)}>History</button><button onClick={() => accountForm(d, db, ws, a)}>Edit</button><button className="!text-red-500" onClick={() => deleteAccount(d, db, a)}>Delete</button></div>
+              </div>)
+          })}
+        </div>
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead><tr>{['Account', 'Type', 'Number', 'Start', 'Starting bal.', 'This month', 'Current balance', 'Checked', ''].map((h, i) => <th key={i} className={`table-th ${i >= 4 && i <= 6 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
             <tbody>
