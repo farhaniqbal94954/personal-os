@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { useData, useDb } from '../lib/data'
 import { useAppStore } from '../store/useAppStore'
 import { daysUntil, formatDate, formatMoney, fmtNum, WS } from '../lib/formatters'
@@ -14,16 +14,45 @@ export function usePage() {
   return { d: data as AppData, db, ws, money: (n: number) => formatMoney(n, ws) }
 }
 
+/** Shrinks its text until it fits the box — numbers are never cut off with "…" */
+export function FitText({ children, max = 26, min = 13, className = '', title }: { children: ReactNode; max?: number; min?: number; className?: string; title?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current; if (!el) return
+    const fit = () => {
+      let size = max; el.style.fontSize = size + 'px'; el.style.whiteSpace = 'nowrap'
+      while (el.scrollWidth > el.clientWidth + 0.5 && size > min) { size -= 0.5; el.style.fontSize = size + 'px' }
+      if (el.scrollWidth > el.clientWidth + 0.5) el.style.whiteSpace = 'normal' // long names wrap instead of being cut
+    }
+    fit()
+    const ro = new ResizeObserver(fit); ro.observe(el)
+    return () => ro.disconnect()
+  }, [children, max, min])
+  return <div ref={ref} title={title} className={`whitespace-nowrap overflow-hidden ${className}`}>{children}</div>
+}
+
+/** "−INR 46,88,146.50" → small grey currency code + big number */
+export function MoneyText({ value }: { value: ReactNode }) {
+  if (typeof value !== 'string') return <>{value}</>
+  const m = value.match(/^([+−-]?)([A-Z]{3}) (.+)$/)
+  if (!m) return <>{value}</>
+  return <>{m[1]}<span className="text-[0.58em] font-bold opacity-55 mr-[0.25em] align-[0.12em]">{m[2]}</span>{m[3]}</>
+}
+
 export function Kpi({ label, value, foot, tone, icon }: { label: string; value: ReactNode; foot?: ReactNode; tone?: 'pos' | 'neg' | 'warn'; icon?: string }) {
   const c = tone === 'pos' ? 'text-emerald-600 dark:text-emerald-400' : tone === 'neg' ? 'text-red-500 dark:text-red-400' : tone === 'warn' ? 'text-amber-500' : 'text-slate-900 dark:text-white'
+  const isMoney = typeof value === 'string' && /^[+−-]?[A-Z]{3} /.test(value)
   return (
-    <div className="card p-4 sm:p-5 min-w-0">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <span className="text-[10px] sm:text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider sm:tracking-widest leading-tight">{label}</span>
-        {icon && <span className="hidden sm:flex w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 items-center justify-center text-base shrink-0">{icon}</span>}
+    <div className="card p-4 2xl:p-5 min-w-0 h-full flex flex-col">
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <span className="text-[10px] 2xl:text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-tight">{label}</span>
+        {icon && <span className="hidden 2xl:flex w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 items-center justify-center text-sm shrink-0">{icon}</span>}
       </div>
-      <div className={`text-lg sm:text-[1.45rem] font-black tracking-tight leading-tight mb-1 truncate ${c}`} data-testid={`kpi-${label}`}>{value}</div>
-      <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 min-h-[1rem]">{foot}</div>
+      <FitText max={isMoney ? 24 : 22} min={isMoney ? 13 : 14} title={typeof value === 'string' ? value : undefined}
+        className={`font-black tracking-tight leading-tight mb-1 tabular-nums ${c}`}>
+        <span data-testid={`kpi-${label}`}><MoneyText value={value} /></span>
+      </FitText>
+      <div className="text-[11px] 2xl:text-xs font-semibold text-slate-400 dark:text-slate-500 mt-auto leading-snug">{foot}</div>
     </div>
   )
 }

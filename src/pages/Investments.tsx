@@ -35,17 +35,17 @@ export default function Investments() {
       </div>
       <div className="card mb-5 overflow-x-auto hidden md:block">
         <table className="w-full">
-          <thead><tr>{['Name', 'Type', 'Invested', 'Value', 'Gain', 'Weight', 'Updated', ''].map((h, i) => <th key={i} className={`table-th ${i >= 2 && i <= 5 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
+          <thead><tr>{['Name', 'Type', 'Invested', 'Value', 'Gain', 'Weight', 'Updated', ''].map((h, i) => <th key={i} className={`table-th ${i >= 2 && i <= 5 ? 'text-right' : ''} ${i === 1 ? 'hidden 2xl:table-cell' : ''}`}>{h}</th>)}</tr></thead>
           <tbody>
             {hs.length === 0 ? <tr><td colSpan={8}><Empty action={<button className="btn-primary btn-sm" onClick={() => holdingForm(db, ws)}>+ Add investment</button>}>No investments yet.</Empty></td></tr> : hs.map((h) => { const gg = r2(h.current_value - h.invested); return (
               <tr key={h.id} className="table-row">
-                <td className="table-td"><div className="font-semibold">{h.name}</div>{h.units ? <div className="text-xs text-slate-400">{h.units} units</div> : null}</td>
-                <td className="table-td"><span className="badge-slate">{h.type}</span></td>
+                <td className="table-td"><div className="font-semibold">{h.name}</div><div className="text-xs text-slate-400"><span className="2xl:hidden">{h.type}</span>{h.units ? <span><span className="2xl:hidden"> · </span>{h.units} units</span> : null}</div></td>
+                <td className="table-td hidden 2xl:table-cell"><span className="badge-slate">{h.type}</span></td>
                 <td className="table-td text-right">{money(h.invested)}</td>
                 <td className="table-td text-right font-bold">{money(h.current_value)}</td>
                 <td className={`table-td text-right ${gg >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{gg >= 0 ? '+' : ''}{money(gg)}<div className="text-xs">{h.invested ? pct(gg, h.invested) + '%' : ''}</div></td>
                 <td className="table-td text-right">{pct(h.current_value, cv)}%</td>
-                <td className={`table-td text-xs ${daysUntil(h.updated_on) < -30 ? 'text-amber-500' : 'text-slate-400'}`}>{formatDate(h.updated_on)}</td>
+                <td className={`table-td text-xs whitespace-nowrap ${daysUntil(h.updated_on) < -30 ? 'text-amber-500' : 'text-slate-400'}`}>{formatDate(h.updated_on)}</td>
                 <td className="table-td text-right text-xs whitespace-nowrap">
                   <button className="text-indigo-600 font-semibold mr-3" onClick={() => holdValueForm(db, h)}>Update value</button>
                   <button className="text-slate-500 hover:text-indigo-600 mr-3" onClick={() => investMoveForm(d, db, h, 'buy')}>Buy</button>

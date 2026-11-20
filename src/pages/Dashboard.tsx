@@ -39,7 +39,7 @@ export default function Dashboard() {
       <PageHeader title="Dashboard" subtitle={`${WS[ws].flag} ${WS[ws].label} · ${WS[ws].cur} — your money and priorities at a glance.`}
         action={<button className="btn-primary" onClick={() => txnForm(d, db, ws)}>+ Transaction</button>} />
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 2xl:gap-4 mb-4">
         <Kpi label="Bank balance" value={money(bal)} foot={`${accs.length} active account${accs.length !== 1 ? 's' : ''}`} icon="🏦" tone={bal < 0 ? 'neg' : undefined} />
         <Kpi label={`Income · ${monthShort(m)}`} value={money(inc)} foot={chg(inc, last.inc)} tone="pos" icon="↗️" />
         <Kpi label={`Expenses · ${monthShort(m)}`} value={money(exp)} foot={chg(exp, last.exp, true)} tone="neg" icon="↘️" />
@@ -47,10 +47,10 @@ export default function Dashboard() {
         <div className="col-span-2 lg:col-span-1"><Kpi label="Net worth" value={money(nw)} foot={combined !== null ? `Both countries ≈ ${money(combined)}` : 'Bank + investments'} icon="💎" /></div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 mb-4">
-        <div className="card p-5 xl:col-span-3">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-3 2xl:gap-4 mb-4">
+        <div className="card p-5 xl:col-span-3 flex flex-col">
           <CardHead title="Cash flow — last 6 months">{rate !== null && <span className="text-xs text-slate-400">Savings rate this month: <b className={rate >= d.settings.savings_target ? 'text-emerald-600' : rate < 0 ? 'text-red-500' : 'text-amber-500'}>{rate}%</b></span>}</CardHead>
-          <ResponsiveContainer width="100%" height={230}>
+          <div className="flex-1 min-h-[220px]"><ResponsiveContainer width="100%" height="100%">
             <BarChart data={chart} barGap={3} barSize={18}>
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.07} vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -60,13 +60,13 @@ export default function Dashboard() {
               <Bar isAnimationActive={false} dataKey="Income" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               <Bar isAnimationActive={false} dataKey="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer></div>
         </div>
         <div className="card p-5 xl:col-span-2">
           <CardHead title={<>💡 Suggestions <span className="badge-slate ml-1">{sg.length}</span></>} />
-          <div className="xl:max-h-[260px] xl:overflow-y-auto pr-1" data-testid="suggestions">
+          <div className="xl:max-h-[300px] xl:overflow-y-auto -mx-2" data-testid="suggestions">
             {sg.length === 0 ? <Empty>All good — nothing needs attention 🎉</Empty> : sg.map((s, i) => (
-              <div key={i} className={`flex gap-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0 ${s.to ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30 -mx-2 px-2 rounded-lg' : ''}`} onClick={() => s.to && nav(s.to)}>
+              <div key={i} className={`flex gap-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0 px-2 rounded-lg ${s.to ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30' : ''}`} onClick={() => s.to && nav(s.to)}>
                 <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${s.lvl === 'red' ? 'bg-red-500' : s.lvl === 'amber' ? 'bg-amber-500' : s.lvl === 'green' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
                 <div><div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{s.title}</div><div className="text-xs text-slate-500 dark:text-slate-400">{s.text}</div></div>
               </div>
@@ -76,7 +76,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 2xl:gap-4 mb-4">
         <div className="card p-5">
           <CardHead title="Bank accounts"><Link to="/accounts" className="btn btn-sm">View all →</Link></CardHead>
           {accs.length === 0 ? <Empty action={<button className="btn-primary btn-sm" onClick={() => accountForm(d, db, ws)}>+ Add account</button>}>No accounts in this workspace.</Empty> : <>
@@ -105,7 +105,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 2xl:gap-4">
         <div className="card p-5">
           <CardHead title="Recent transactions"><Link to="/transactions" className="btn btn-sm">View all →</Link></CardHead>
           {recent.length === 0 ? <Empty action={<button className="btn-primary btn-sm" onClick={() => txnForm(d, db, ws)}>+ Add transaction</button>}>No transactions yet.</Empty> : recent.map((t) => (

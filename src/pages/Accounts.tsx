@@ -58,20 +58,20 @@ export default function Accounts() {
         </div>
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
-            <thead><tr>{['Account', 'Type', 'Number', 'Start', 'Starting bal.', 'This month', 'Current balance', 'Checked', ''].map((h, i) => <th key={i} className={`table-th ${i >= 4 && i <= 6 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
+            <thead><tr>{['Account', 'Type', 'Number', 'Start', 'Starting bal.', 'This month', 'Current balance', 'Checked', ''].map((h, i) => <th key={i} className={`table-th ${i >= 4 && i <= 6 ? 'text-right' : ''} ${i === 1 || i === 2 ? 'hidden 2xl:table-cell' : ''}`}>{h}</th>)}</tr></thead>
             <tbody>
               {list.length === 0 ? <tr><td colSpan={9}><Empty action={<button className="btn-primary btn-sm" onClick={() => accountForm(d, db, ws)}>+ Add account</button>}>{search ? 'No accounts match.' : 'No accounts yet in this workspace.'}</Empty></td></tr> : list.map((a) => {
                 const b = accBalance(d, a) ?? 0; const mv = monthMove(a.id, a.opening_date)
                 return (
                   <tr key={a.id} className={`table-row ${a.archived ? 'opacity-50' : ''}`} data-testid="acc-row">
-                    <td className="table-td"><div className="font-semibold">{a.bank}</div><div className="text-xs text-slate-400">{a.name}{a.archived ? ' · archived' : ''}</div></td>
-                    <td className="table-td text-slate-600 dark:text-slate-300">{a.type}</td>
-                    <td className="table-td font-mono text-slate-400">{a.last4 ? '•••• ' + a.last4 : '—'}</td>
+                    <td className="table-td"><div className="font-semibold">{a.bank}</div><div className="text-xs text-slate-400">{a.name}<span className="2xl:hidden"> · {a.type}{a.last4 ? ' · ••' + a.last4 : ''}</span>{a.archived ? ' · archived' : ''}</div></td>
+                    <td className="table-td text-slate-600 dark:text-slate-300 hidden 2xl:table-cell">{a.type}</td>
+                    <td className="table-td font-mono text-slate-400 hidden 2xl:table-cell">{a.last4 ? '•••• ' + a.last4 : '—'}</td>
                     <td className="table-td text-xs text-slate-400 whitespace-nowrap">{formatDate(a.opening_date)}</td>
                     <td className="table-td text-right">{money(a.opening_balance)}</td>
                     <td className={`table-td text-right ${mv > 0 ? 'text-income' : mv < 0 ? 'text-expense' : 'text-slate-400'}`}>{mv ? (mv > 0 ? '+' : '') + money(mv) : '—'}</td>
                     <td className={`table-td text-right font-black ${b < 0 ? 'text-red-500' : ''}`} data-testid="acc-balance">{money(b)}</td>
-                    <td className="table-td text-xs">{a.last_reconciled ? formatDate(a.last_reconciled) : <span className="text-slate-400">never</span>}</td>
+                    <td className="table-td text-xs whitespace-nowrap">{a.last_reconciled ? formatDate(a.last_reconciled) : <span className="text-slate-400">never</span>}</td>
                     <td className="table-td text-right whitespace-nowrap text-xs">
                       <button className="text-indigo-600 font-semibold mr-3" onClick={() => reconcileForm(d, db, a)}>Reconcile</button>
                       <button className="text-slate-400 hover:text-indigo-600 mr-3" onClick={() => nav(`/transactions?account=${a.id}`)}>History</button>
