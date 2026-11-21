@@ -10,7 +10,7 @@ import { daysUntil } from '../lib/formatters'
 const NAV = [
   { section: 'WORKSPACE', items: [
     { to: '/', label: 'Dashboard', icon: '⊞' }, { to: '/accounts', label: 'Bank Accounts', icon: '🏦' }, { to: '/transactions', label: 'Transactions', icon: '↕' },
-    { to: '/budgets', label: 'Budgets', icon: '🎯' }, { to: '/investments', label: 'Investments', icon: '📈' }, { to: '/projects', label: 'Projects', icon: '📋' }] },
+    { to: '/jars', label: 'Safety Jars', icon: '🫙' }, { to: '/budgets', label: 'Budgets', icon: '🎯' }, { to: '/investments', label: 'Investments', icon: '📈' }, { to: '/projects', label: 'Projects', icon: '📋' }] },
   { section: 'PERSONAL', items: [{ to: '/tasks', label: 'Tasks', icon: '✓', badge: 'tasks' }, { to: '/reminders', label: 'Reminders', icon: '🔔', badge: 'reminders' }, { to: '/notes', label: 'Notes', icon: '📝' }] },
   { section: 'BUSINESS', items: [{ to: '/business', label: 'Business Hub', icon: '🏢' }] },
   { section: 'INSIGHTS', items: [{ to: '/reports', label: 'Reports', icon: '📊' }, { to: '/settings', label: 'Settings', icon: '⚙️' }] },

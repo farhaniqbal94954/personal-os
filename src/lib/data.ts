@@ -9,8 +9,8 @@ import type { AppData, UserSettings } from '../types/database'
  * - Loads every row (Supabase returns max 1000 rows per request → we page through).
  * - One shared cache ['all'] so pages never overwrite each other's data.
  */
-type Table = 'accounts' | 'transactions' | 'holdings' | 'projects' | 'tasks' | 'reminders' | 'notes' | 'businesses' | 'business_items' | 'budgets'
-export const TABLES: Table[] = ['accounts', 'transactions', 'holdings', 'projects', 'tasks', 'reminders', 'notes', 'businesses', 'business_items', 'budgets']
+type Table = 'accounts' | 'transactions' | 'holdings' | 'projects' | 'tasks' | 'reminders' | 'notes' | 'businesses' | 'business_items' | 'budgets' | 'jars' | 'jar_allocations'
+export const TABLES: Table[] = ['accounts', 'transactions', 'holdings', 'projects', 'tasks', 'reminders', 'notes', 'businesses', 'business_items', 'budgets', 'jars', 'jar_allocations']
 
 const NUMERIC: Record<string, string[]> = {
   accounts: ['opening_balance'],
@@ -20,6 +20,8 @@ const NUMERIC: Record<string, string[]> = {
   reminders: ['amount'],
   business_items: ['value'],
   budgets: ['monthly_limit'],
+  jars: ['priority', 'target_amount', 'target_months', 'coverage', 'premium'],
+  jar_allocations: ['amount'],
   user_settings: ['fx_aed_inr', 'emergency_months', 'savings_target'],
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,7 +82,7 @@ export function useData() {
   return { data: q.data, isLoading: q.isLoading, error: q.error as Error | null, refetch: q.refetch }
 }
 
-const OWNED = new Set<string>(['accounts', 'transactions', 'holdings', 'projects', 'tasks', 'reminders', 'notes', 'businesses', 'budgets'])
+const OWNED = new Set<string>(['accounts', 'transactions', 'holdings', 'projects', 'tasks', 'reminders', 'notes', 'businesses', 'budgets', 'jars', 'jar_allocations'])
 
 /** Write helpers — update the shared cache from the rows Supabase sends back (instant UI, no full reload). */
 export function useDb() {

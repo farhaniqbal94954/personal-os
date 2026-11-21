@@ -10,6 +10,7 @@ export interface Account {
   opening_date: string
   archived: boolean
   last_reconciled: string | null
+  purpose: 'Daily' | 'Savings' | 'Business' | 'Other' | null
 }
 
 export interface Transaction {
@@ -109,6 +110,33 @@ export interface UserSettings {
   targets: Partial<Record<Country, Record<string, number>>>
 }
 
+/** A jar labels part of a bank balance — the money stays in the account */
+export interface Jar {
+  id: string; user_id: string; country: Country
+  name: string; icon: string
+  kind: 'money' | 'protection'
+  priority: number
+  target_mode: 'fixed' | 'months'
+  target_amount: number
+  target_months: number | null
+  target_date: string | null
+  covered: boolean; provider: string; policy_no: string
+  coverage: number | null; premium: number | null
+  premium_freq: 'Monthly' | 'Quarterly' | 'Yearly' | null
+  renewal_date: string | null; reminder_id: string | null
+  note: string; archived: boolean; created_at: string
+}
+
+/** + reserve, − release / use. Jar balance in an account = sum(amount) */
+export interface JarAllocation {
+  id: string; user_id: string
+  jar_id: string; account_id: string
+  amount: number
+  kind: 'add' | 'release' | 'use'
+  date: string; note: string; txn_id: string | null
+  created_at: string
+}
+
 export interface AppData {
   accounts: Account[]
   transactions: Transaction[]
@@ -120,5 +148,7 @@ export interface AppData {
   businesses: Business[]
   business_items: BusinessItem[]
   budgets: Budget[]
+  jars: Jar[]
+  jar_allocations: JarAllocation[]
   settings: UserSettings
 }

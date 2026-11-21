@@ -30,7 +30,7 @@ npm install
 npm run dev                          # http://localhost:5173
 ```
 Local builds skip the database step unless a `POSTGRES_URL…` variable is set. You can also run the SQL files in
-`supabase/migrations` by hand in the Supabase SQL Editor (001 then 002) — both ways give the same result.
+`supabase/migrations` by hand in the Supabase SQL Editor (001, 002, 003 in order) — both ways give the same result.
 
 ---
 
@@ -48,6 +48,7 @@ Local builds skip the database step unless a `POSTGRES_URL…` variable is set. 
 | Dashboard | Bank balance, this-month income/expenses vs last month, investments, net worth (both countries with your FX rate), 6-month cash flow, **smart suggestions**, spending by category, upcoming bills/invoices/renewals, tasks |
 | Bank Accounts | Add / edit / archive / delete, reconcile, history, month movement, 12-month balance trend, credit cards |
 | Transactions | Income, expense, transfer, adjustment · edit & delete · filters (month, type, account, category, search) · CSV import (bank statements, duplicate detection, auto-categories) · CSV export |
+| **Safety Jars** | Your safety base in priority order (emergency fund, health & life insurance, yearly costs, Hajj…). Jars **reserve** part of a bank balance — the money never leaves the account. Accounts show 🔒 reserved vs free, the transaction form warns before you spend jar money, protection jars track policies and create renewal reminders, targets can follow "N months of my expenses" automatically, plus a Safety Base score and level |
 | Budgets | Monthly limit per category, spending pace, unbudgeted spending |
 | Investments | Holdings, buy / sell from bank accounts, update value, gain/loss, allocation vs target |
 | Projects | Budget, spending from tagged expenses + earlier spending |

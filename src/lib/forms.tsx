@@ -5,6 +5,7 @@ import type { useDb } from './data'
 import { ACC_TYPES, FREQ_M, HOLD_TYPES, accBalance, accCountry, activeAccounts, balanceNow, expenseCats, incomeCats, isFlow, nextDue } from './finance'
 import { addMonths, formatDate, formatMoney, r2, today, WS } from './formatters'
 import { toast } from '../store/useAppStore'
+import { ACCOUNT_PURPOSES, freeIn, jarsInAccount, reservedIn } from './jars'
 
 type Db = ReturnType<typeof useDb>
 const accOpts = (d: AppData, ws: Country | '*', keep?: string | null): [string, string][] =>
@@ -29,6 +30,7 @@ export function accountForm(d: AppData, db: Db, ws: Country, rec?: Account) {
       { k: 'bank', l: 'Bank / provider', req: true, ph: ws === 'UAE' ? 'Emirates NBD' : 'HDFC Bank' },
       { k: 'name', l: 'Account name', req: true, ph: 'Current account' },
       { k: 'type', l: 'Type', t: 'select', req: true, opts: list(ACC_TYPES) },
+      { k: 'purpose', l: 'What is it for?', t: 'select', blank: '— Not set —', opts: ACCOUNT_PURPOSES, hint: 'Daily spending, savings or company — jars suggest savings accounts first.' },
       { k: 'last4', l: 'Last 4 digits', ph: '4821', max: 4 },
       { k: 'opening_balance', l: `Starting balance (${cur})`, t: 'number', req: true, hint: 'Credit card: enter the amount you owe as a negative number, e.g. -2500.' },
       { k: 'opening_date', l: 'Balance as of (start date)', t: 'date', req: true, hint: 'Older transactions are kept as history but not added to the balance.' },
@@ -36,7 +38,7 @@ export function accountForm(d: AppData, db: Db, ws: Country, rec?: Account) {
     ],
     validate: (v) => (v.last4 && !/^\d{4}$/.test(v.last4) ? 'Last 4 digits must be exactly 4 numbers.' : null),
     onSubmit: async (v) => {
-      const row = { bank: v.bank, name: v.name, type: v.type, last4: v.last4 || null, number: v.last4 ? '•••• ' + v.last4 : '', opening_balance: v.opening_balance, opening_date: v.opening_date, archived: !!v.archived, balance: v.opening_balance }
+      const row = { bank: v.bank, name: v.name, type: v.type, purpose: v.purpose || null, last4: v.last4 || null, number: v.last4 ? '•••• ' + v.last4 : '', opening_balance: v.opening_balance, opening_date: v.opening_date, archived: !!v.archived, balance: v.opening_balance }
       if (rec) await db.update('accounts', rec.id, row); else await db.insert('accounts', { ...row, country: ws })
     },
     success: rec ? 'Account updated' : 'Account added',
@@ -77,6 +79,16 @@ export function txnForm(d: AppData, db: Db, ws: Country, rec?: Transaction, pres
   const country = rec?.country || ws
   openForm({
     title: rec ? 'Edit transaction' : 'Add transaction',
+    info: (v) => {
+      // 🔒 warn before spending money that is reserved in a jar
+      if (!(v.type === 'Expense' || v.type === 'Transfer') || !v.account_id) return null
+      const a = d.accounts.find((x) => x.id === v.account_id); if (!a || reservedIn(d, a.id) <= 0) return null
+      const res = reservedIn(d, a.id); const already = rec && rec.account_id === a.id && (rec.type === 'Expense' || rec.type === 'Transfer') ? rec.amount : 0
+      const free = freeIn(d, a) + already; const amt = Number(v.amount) || 0; const names = jarsInAccount(d, a.id).map((x) => x.jar.name).join(', ')
+      return amt > free + 0.001
+        ? <span className="text-red-600 dark:text-red-400" data-testid="reserve-warning">⚠️ This uses <b>{formatMoney(amt - Math.max(0, free), a.country)}</b> of jar money ({names}). Free to use in {a.bank}: {formatMoney(Math.max(0, free), a.country)}. You can still save — the jar will show it was touched.</span>
+        : <>🔒 {formatMoney(res, a.country)} in {a.bank} is reserved for {names}. Free to use: <b>{formatMoney(free, a.country)}</b>.</>
+    },
     initial: rec ? { ...rec } : { type: 'Expense', date: today(), account_id: activeAccounts(d, ws)[0]?.id, category: '', description: '', ...preset },
     fields: (v) => {
       const xfer = v.type === 'Transfer'

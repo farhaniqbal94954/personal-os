@@ -2,7 +2,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import PageHeader from '../components/PageHeader'
 import { Amount, CardHead, DueBadge, Empty, Kpi, Progress, chartTooltip, usePage } from '../components/ui'
-import { activeAccounts, balanceNow, bankTotal, catTotals, investTotal, investedTotal, monthIE, sortTx, suggestions, upcomingItems, wsTxns } from '../lib/finance'
+import { activeAccounts, balanceNow, bankTotal, catTotals, investTotal, investedTotal, monthIE, sortTx, upcomingItems, wsTxns } from '../lib/finance'
+import { allSuggestions, freeIn, jarProgress, reservedIn, reservedTotal, safetyScore, wsJars } from '../lib/jars'
 import { accountForm, txnForm } from '../lib/forms'
 import { formatDate, monthAdd, monthShort, moneyShort, pct, r2, thisMonth, today, WS } from '../lib/formatters'
 
@@ -17,7 +18,10 @@ export default function Dashboard() {
   const other = ws === 'UAE' ? 'INDIA' : 'UAE'; const onw = bankTotal(d, other) + investTotal(d, other); const fx = d.settings.fx_aed_inr
   const combined = fx ? (ws === 'UAE' ? nw + onw / fx : nw + onw * fx) : null
   const chart = Array.from({ length: 6 }, (_, i) => { const mk = monthAdd(m, i - 5); const x = monthIE(d, ws, mk); return { month: monthShort(mk), Income: x.inc, Expenses: x.exp } })
-  const sg = suggestions(d, ws)
+  const sg = allSuggestions(d, ws)
+  const reserved = reservedTotal(d, ws)
+  const safety = safetyScore(d, ws)
+  const jars = wsJars(d, ws)
   const recent = wsTxns(d, ws).sort(sortTx).slice(0, 6)
   const prio = { High: 0, Medium: 1, Low: 2 }
   const tasks = d.tasks.filter((t) => !t.done).sort((a, b) => a.due_date.localeCompare(b.due_date) || prio[a.priority] - prio[b.priority]).slice(0, 6)
@@ -40,12 +44,22 @@ export default function Dashboard() {
         action={<button className="btn-primary" onClick={() => txnForm(d, db, ws)}>+ Transaction</button>} />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 2xl:gap-4 mb-4">
-        <Kpi label="Bank balance" value={money(bal)} foot={`${accs.length} active account${accs.length !== 1 ? 's' : ''}`} icon="🏦" tone={bal < 0 ? 'neg' : undefined} />
+        <Kpi label="Bank balance" value={money(bal)} foot={reserved ? <>Free {money(r2(bal - reserved))} · <span className="text-indigo-600 dark:text-indigo-400">🔒 {money(reserved)}</span></> : `${accs.length} active account${accs.length !== 1 ? 's' : ''}`} icon="🏦" tone={bal < 0 ? 'neg' : undefined} />
         <Kpi label={`Income · ${monthShort(m)}`} value={money(inc)} foot={chg(inc, last.inc)} tone="pos" icon="↗️" />
         <Kpi label={`Expenses · ${monthShort(m)}`} value={money(exp)} foot={chg(exp, last.exp, true)} tone="neg" icon="↘️" />
         <Kpi label="Investments" value={money(inv)} foot={invCost ? <span className={inv >= invCost ? 'text-emerald-600' : 'text-red-500'}>{inv >= invCost ? '+' : ''}{pct(inv - invCost, invCost)}% return</span> : `${d.holdings.filter((h) => h.country === ws).length} holdings`} icon="📈" />
         <div className="col-span-2 lg:col-span-1"><Kpi label="Net worth" value={money(nw)} foot={combined !== null ? `Both countries ≈ ${money(combined)}` : 'Bank + investments'} icon="💎" /></div>
       </div>
+
+      <Link to="/jars" className="card px-4 py-3 mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 hover:border-indigo-400 transition-colors" data-testid="safety-strip">
+        <div className="flex items-center gap-2.5 shrink-0"><span className="text-xl">🫙</span><div><div className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">Safety base</div><div className="text-sm font-black">{jars.length ? `Level ${safety.level} of 5 · ${safety.score}% strong` : 'Not started'}</div></div></div>
+        <div className="flex-1 min-w-[180px] flex gap-1.5 items-center">
+          {jars.length ? jars.map((j) => <div key={j.id} title={`${j.name}: ${Math.round(jarProgress(d, j) * 100)}%`} className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${jarProgress(d, j) * 100}%`, background: jarProgress(d, j) >= 1 ? '#10b981' : safety.next?.id === j.id ? '#6366f1' : '#94a3b8' }} /></div>)
+            : <span className="text-xs text-slate-400">Create jars for an emergency fund and insurance →</span>}
+        </div>
+        {safety.next && <div className="text-xs text-slate-500 dark:text-slate-400 shrink-0">Fill next: <b className="text-slate-700 dark:text-slate-200">{safety.next.icon} {safety.next.name}</b></div>}
+        {reserved > 0 && <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 shrink-0">🔒 {money(reserved)} reserved</div>}
+      </Link>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-3 2xl:gap-4 mb-4">
         <div className="card p-5 xl:col-span-3 flex flex-col">
@@ -82,8 +96,8 @@ export default function Dashboard() {
           {accs.length === 0 ? <Empty action={<button className="btn-primary btn-sm" onClick={() => accountForm(d, db, ws)}>+ Add account</button>}>No accounts in this workspace.</Empty> : <>
             {accs.map((a) => { const b = balanceNow(d, a); return (
               <div key={a.id} className="flex justify-between gap-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50">
-                <div className="min-w-0"><div className="text-sm font-semibold truncate">{a.bank}</div><div className="text-xs text-slate-400">{a.name} · {a.type}</div></div>
-                <span className={`text-sm font-bold shrink-0 ${b < 0 ? 'text-red-500' : ''}`}>{money(b)}</span>
+                <div className="min-w-0"><div className="text-sm font-semibold truncate">{a.bank}</div><div className="text-xs text-slate-400">{a.name} · {a.purpose || a.type}</div></div>
+                <div className="text-right shrink-0"><div className={`text-sm font-bold ${b < 0 ? 'text-red-500' : ''}`}>{money(b)}</div>{reservedIn(d, a.id) ? <div className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">🔒 {money(reservedIn(d, a.id))} · free {money(freeIn(d, a))}</div> : null}</div>
               </div>) })}
             <div className="flex justify-between pt-3 text-sm font-black"><span>Total</span><span data-testid="dash-total">{money(bal)}</span></div>
           </>}

@@ -5,6 +5,7 @@ import PageHeader from '../components/PageHeader'
 import { Empty, Kpi, chartTooltip, usePage } from '../components/ui'
 import { accBalance, balanceNow, bankTotal, bankTotalAt } from '../lib/finance'
 import { accountForm, deleteAccount, reconcileForm, txnForm } from '../lib/forms'
+import { freeIn, jarsInAccount, purposeLabel, reservedIn, reservedTotal } from '../lib/jars'
 import { cents, formatDate, monthAdd, monthEnd, monthShort, moneyShort, thisMonth, today, WS } from '../lib/formatters'
 
 export default function Accounts() {
@@ -33,7 +34,7 @@ export default function Accounts() {
         <Kpi label="Total balance" value={money(total)} foot="All accounts, net of credit cards" icon="💰" />
         <Kpi label="Accounts" value={String(active.length)} foot={`Across ${new Set(active.map((a) => a.bank)).size} bank(s)`} icon="🏦" />
         <Kpi label="Card outstanding" value={money(owed)} foot={cards.length ? `${cards.length} card(s)` : 'No credit cards'} tone={owed ? 'neg' : undefined} icon="💳" />
-        <Kpi label="Currency" value={WS[ws].cur} foot="No conversion inside a workspace" icon="💱" />
+        <Kpi label="Free to use" value={money(active.filter((a) => a.type !== 'Credit card').reduce((s, a) => s + freeIn(d, a), 0))} foot={reservedTotal(d, ws) ? `🔒 ${money(reservedTotal(d, ws))} reserved in jars` : 'Nothing reserved in jars yet'} icon="🫙" />
       </div>
 
       <div className="card mb-5">
@@ -48,8 +49,8 @@ export default function Accounts() {
             return (
               <div key={a.id} className={`m-row ${a.archived ? 'opacity-50' : ''}`} data-testid="acc-card">
                 <div className="flex justify-between gap-3">
-                  <div className="min-w-0"><div className="font-semibold truncate">{a.bank}</div><div className="text-xs text-slate-400 truncate">{a.name} · {a.type}{a.last4 ? ' · ••' + a.last4 : ''}{a.archived ? ' · archived' : ''}</div></div>
-                  <div className="text-right shrink-0"><div className={`font-black ${b < 0 ? 'text-red-500' : ''}`}>{money(b)}</div>{mv ? <div className={`text-xs ${mv > 0 ? 'text-income' : 'text-expense'}`}>{mv > 0 ? '+' : ''}{money(mv)} this month</div> : null}</div>
+                  <div className="min-w-0"><div className="font-semibold truncate">{a.bank}</div><div className="text-xs text-slate-400 truncate">{a.purpose ? purposeLabel(a.purpose) + ' · ' : ''}{a.name} · {a.type}{a.last4 ? ' · ••' + a.last4 : ''}{a.archived ? ' · archived' : ''}</div></div>
+                  <div className="text-right shrink-0"><div className={`font-black ${b < 0 ? 'text-red-500' : ''}`}>{money(b)}</div>{reservedIn(d, a.id) ? <div className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">🔒 {money(reservedIn(d, a.id))} · free {money(freeIn(d, a))}</div> : null}{mv ? <div className={`text-xs ${mv > 0 ? 'text-income' : 'text-expense'}`}>{mv > 0 ? '+' : ''}{money(mv)} this month</div> : null}</div>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1">Start {formatDate(a.opening_date)} · {money(a.opening_balance)} · checked {a.last_reconciled ? formatDate(a.last_reconciled) : 'never'}</div>
                 <div className="m-actions"><button className="!text-indigo-600" onClick={() => reconcileForm(d, db, a)}>Reconcile</button><button onClick={() => nav(`/transactions?account=${a.id}`)}>History</button><button onClick={() => accountForm(d, db, ws, a)}>Edit</button><button className="!text-red-500" onClick={() => deleteAccount(d, db, a)}>Delete</button></div>
@@ -64,13 +65,13 @@ export default function Accounts() {
                 const b = accBalance(d, a) ?? 0; const mv = monthMove(a.id, a.opening_date)
                 return (
                   <tr key={a.id} className={`table-row ${a.archived ? 'opacity-50' : ''}`} data-testid="acc-row">
-                    <td className="table-td"><div className="font-semibold">{a.bank}</div><div className="text-xs text-slate-400">{a.name}<span className="2xl:hidden"> · {a.type}{a.last4 ? ' · ••' + a.last4 : ''}</span>{a.archived ? ' · archived' : ''}</div></td>
+                    <td className="table-td"><div className="font-semibold">{a.bank}{a.purpose ? <span className="ml-2 badge-slate">{purposeLabel(a.purpose)}</span> : null}</div><div className="text-xs text-slate-400">{a.name}<span className="2xl:hidden"> · {a.type}{a.last4 ? ' · ••' + a.last4 : ''}</span>{a.archived ? ' · archived' : ''}</div></td>
                     <td className="table-td text-slate-600 dark:text-slate-300 hidden 2xl:table-cell">{a.type}</td>
                     <td className="table-td font-mono text-slate-400 hidden 2xl:table-cell">{a.last4 ? '•••• ' + a.last4 : '—'}</td>
                     <td className="table-td text-xs text-slate-400 whitespace-nowrap">{formatDate(a.opening_date)}</td>
                     <td className="table-td text-right">{money(a.opening_balance)}</td>
                     <td className={`table-td text-right ${mv > 0 ? 'text-income' : mv < 0 ? 'text-expense' : 'text-slate-400'}`}>{mv ? (mv > 0 ? '+' : '') + money(mv) : '—'}</td>
-                    <td className={`table-td text-right font-black ${b < 0 ? 'text-red-500' : ''}`} data-testid="acc-balance">{money(b)}</td>
+                    <td className={`table-td text-right font-black ${b < 0 ? 'text-red-500' : ''}`} ><span data-testid="acc-balance">{money(b)}</span>{reservedIn(d, a.id) ? <div className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400" title={jarsInAccount(d, a.id).map((x) => `${x.jar.name}: ${money(x.amount)}`).join('\n')}>🔒 {money(reservedIn(d, a.id))} · free {money(freeIn(d, a))}</div> : null}</td>
                     <td className="table-td text-xs whitespace-nowrap">{a.last_reconciled ? formatDate(a.last_reconciled) : <span className="text-slate-400">never</span>}</td>
                     <td className="table-td text-right whitespace-nowrap text-xs">
                       <button className="text-indigo-600 font-semibold mr-3" onClick={() => reconcileForm(d, db, a)}>Reconcile</button>

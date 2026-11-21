@@ -12,6 +12,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Accounts = lazy(() => import('./pages/Accounts'))
 const Transactions = lazy(() => import('./pages/Transactions'))
 const Budgets = lazy(() => import('./pages/Budgets'))
+const Jars = lazy(() => import('./pages/Jars'))
 const Investments = lazy(() => import('./pages/Investments'))
 const Projects = lazy(() => import('./pages/Projects'))
 const Tasks = lazy(() => import('./pages/Tasks'))
@@ -70,6 +71,7 @@ export default function App() {
                 <Route path="accounts" element={<Accounts />} />
                 <Route path="transactions" element={<Transactions />} />
                 <Route path="budgets" element={<Budgets />} />
+                <Route path="jars" element={<Jars />} />
                 <Route path="investments" element={<Investments />} />
                 <Route path="projects" element={<Projects />} />
                 <Route path="tasks" element={<Tasks />} />
